@@ -1,0 +1,6 @@
+---
+#reds_version: 4.0.14
+#redis_source_url: http://download.redis.io/releases/redis-{{ reds_version }}.tar.gz
+redis_source_url: http://download.redis.io/redis-stable.tar.gz
+
+build_dir: /tmp/

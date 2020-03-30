@@ -1,0 +1,18 @@
+---
+- name: Remove Dev dependencies
+  yum:
+    name: "@Development Tools"
+    state: absent
+
+- name: Firewall allow http
+  firewalld:
+    port: 80/tcp
+    immediate: yes
+    permanent: yes
+    state: enabled
+
+- name: Copy Nginx configuration
+  copy:
+    src: "etc/nginx/"
+    dest: "/etc/nginx/"
+  notify: Nginx restart

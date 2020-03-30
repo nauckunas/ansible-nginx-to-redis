@@ -1,0 +1,19 @@
+---
+nginx_version: 1.17.9
+nginx_source_url: https://nginx.org/download/nginx-{{ nginx_version }}.tar.gz
+nginx_additional_compile_opts: >-
+  --sbin-path=/usr/sbin/nginx 
+  --conf-path=/etc/nginx/nginx.conf
+  --pid-path=/var/run/nginx.pid
+
+nginx_redis2_module_version: 0.15
+nginx_redis2_module_source_url: https://github.com/openresty/redis2-nginx-module/archive/v{{ nginx_redis2_module_version }}.tar.gz
+
+pcre_version: 8.44
+pcre_source_url: https://ftp.pcre.org/pub/pcre/pcre-{{ pcre_version }}.tar.gz
+
+zlib_version: 1.2.11
+zlib_source_url: https://zlib.net/zlib-{{ zlib_version }}.tar.gz
+
+
+build_dir: /tmp/

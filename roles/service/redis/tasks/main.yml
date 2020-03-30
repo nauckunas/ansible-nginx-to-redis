@@ -1,0 +1,55 @@
+---
+- name: Install Dev Tools
+  yum:
+    name: "@Development Tools"
+    state: present
+
+- name: Get Redis source
+  get_url:
+    url: "{{ redis_source_url }}"
+    dest: "{{ build_dir }}"
+  register: redis_tar
+
+- name: Extract Redis archive
+  unarchive:
+    copy: no
+    dest: "{{ build_dir }}"
+    src: "{{ redis_tar.dest }}"
+  when: redis_tar.changed
+
+- name: Build and Deploy Redis
+  shell: make -j$(nproc) && cd src && make PREFIX=/usr/ install
+  args:
+    chdir: "{{ redis_tar.dest | regex_replace('.tar.gz$', '') }}"
+  when: redis_tar.changed
+
+- name: Deploy Redis configuration
+  copy:
+    src: "{{ item }}"
+    dest: "/{{ item }}"
+  with_items:
+    - "etc/redis.conf"
+    - "etc/systemd/system/redis.service"
+    - "usr/libexec/redis-shutdown"
+
+- name: Make file executable
+  file:
+    path: "{{ item }}"
+    mode: "a+x"
+  with_items:
+    - "/usr/libexec/redis-shutdown"
+
+- name: Create directory
+  file:
+    path: "{{ item }}"
+    state: directory
+  with_items:
+    - "/var/log/redis"
+    - "/var/lib/redis"
+
+- name: Re-Start redis
+  systemd:
+    name: redis
+    state: restarted
+    daemon_reload: yes
+    enabled: yes

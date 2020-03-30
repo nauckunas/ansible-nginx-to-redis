@@ -1,0 +1,4 @@
+---
+dependencies:
+  - role: service/redis
+  - role: service/nginx

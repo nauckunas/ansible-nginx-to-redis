@@ -1,0 +1,92 @@
+---
+- name: Install Dev dependencies
+  yum:
+    name: "@Development Tools"
+    state: present
+
+# Get nginx source
+- name: Get Nginx source
+  get_url:
+    url: "{{ nginx_source_url }}"
+    dest: "{{ build_dir }}"
+  register: nginx_tar
+
+- name: Extract Nginx archive
+  unarchive:
+    copy: no
+    dest: "{{ build_dir }}"
+    src: "{{ nginx_tar.dest }}"
+  when: nginx_tar.changed
+
+# Get nginx depedencies
+- name: Get PCRE source
+  get_url:
+    url: "{{ pcre_source_url }}"
+    dest: "{{ build_dir }}"
+  register: pcre_tar
+
+- name: Extract PCRE archive
+  unarchive:
+    copy: no
+    dest: "{{ build_dir }}"
+    src: "{{ pcre_tar.dest }}"
+  when: pcre_tar.changed
+ 
+- name: Get Zlib source
+  get_url:
+    url: "{{ zlib_source_url }}"
+    dest: "{{ build_dir }}"
+  register: zlib_tar
+
+- name: Extract Zlib archive
+  unarchive:
+    copy: no
+    dest: "{{ build_dir }}"
+    src: "{{ zlib_tar.dest }}"
+  when: zlib_tar.changed
+ 
+ 
+# Get redis2 source
+- name: Get Nginx redis2 module source
+  get_url:
+    url: "{{ nginx_redis2_module_source_url }}"
+    dest: "{{ build_dir }}"
+  register: redis2_module_tar
+
+- name: Extract Nginx redis2 module archive
+  unarchive:
+    copy: no
+    dest: "{{ build_dir }}"
+    src: "{{ redis2_module_tar.dest }}"
+  when: redis2_module_tar.changed
+
+- name: Deploy Nginx configuration
+  copy:
+    src: "{{ item }}"
+    dest: "/{{ item }}"
+  with_items:
+    - "etc/systemd/system/nginx.service"
+
+# Configure
+- name: Configure Nginx Makefile
+  shell: "./configure {{ nginx_additional_compile_opts }} --with-pcre={{ pcre_tar.dest | regex_replace('.tar.gz$', '') }} --with-zlib={{ zlib_tar.dest | regex_replace('.tar.gz$', '') }} --add-module={{ redis2_module_tar.dest | regex_replace('.tar.gz$', '') }}"
+  args:
+    chdir: "{{ nginx_tar.dest | regex_replace('.tar.gz$', '') }}"
+  when: nginx_tar.changed or
+        pcre_tar.changed or
+        zlib_tar.changed or
+        redis2_module_tar.changed
+  register: nginx_configure
+ 
+- name: Build and Deploy Nginx
+  shell: make -j$(nproc) && make install
+  args:
+    chdir: "{{ nginx_tar.dest | regex_replace('.tar.gz$', '') }}"
+  when: nginx_configure.changed
+
+- name: Re-Start Nginx
+  systemd:
+    name: nginx
+    enabled: yes
+    daemon_reload: yes
+    state: restarted
